@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61.0", "versioningit"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jelly-roll"
+dynamic = ["version"]
+
+[project.scripts]
+jelly-roll = "jelly_roll.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
