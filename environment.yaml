@@ -1,0 +1,15 @@
+name: jelly_roll
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pytest
+  - pytorch
+  - click
+  - tqdm
+  - seaborn
+  - matplotlib
+  - pydantic
+  - pyyaml
+prefix: /Users/alexpayne/miniconda3/envs/jelly_roll

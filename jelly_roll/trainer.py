@@ -14,8 +14,6 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 def trainer():
     pass
 
-class TrainingResults(Base)
-
 def train_model(
     train_dl, valid_dl, model, epochs: int = 40, learning_rate: float = 1e-3
 ):
