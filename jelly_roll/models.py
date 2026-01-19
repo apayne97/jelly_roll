@@ -1,17 +1,12 @@
 import torch
 import torch.nn as nn
-import torchvision
 import numpy as np
-
-import torchvision.transforms as transforms
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 
 from tqdm import tqdm
-from torchvision import datasets
 from torch.utils.data import DataLoader, random_split
-from torchvision.utils import make_grid
 from pydantic import BaseModel
 from pathlib import Path
 import json
@@ -79,6 +74,11 @@ class LinearAutoencoderConfig(BaseModelConfig):
     input_dim: int
     hidden_dim: int
     latent_dim: int
+
+    @property
+    def unique_name(self) -> str:
+        return f"LinearAutoencoder_input{self.input_dim}_hidden{self.hidden_dim}_latent{self.latent_dim}"
+
 
 
 class LinearAutoencoder(nn.Module):

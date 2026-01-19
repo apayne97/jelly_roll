@@ -103,21 +103,18 @@ def run_experiment(input_yaml):
     jr = JellyRoll()
     plot_jelly_roll(jr)
     train, val, test = jr.get_data_loaders()
-    for model in experiment.build_models()[:1]:
-        train_loss_list, val_loss_list, model = train_model(
+    for model in experiment.build_models():
+        model_dir = output_dir / model.config.unique_name
+        model_dir.mkdir(parents=True, exist_ok=True)
+        click.echo(f"Training model: {model.config.unique_name}")
+        train_results = train_model(
             train,
             val,
             model,
             epochs=experiment.epochs,
             learning_rate=experiment.learning_rate,
         )
-        click.echo(f"Trained model: {model}")
-        torch.save(model.state_dict(), output_dir / f"{model.__class__.__name__}.pth")
-        np.save(output_dir / f"train_loss.npy", np.array(train_loss_list))
-        np.save(output_dir / f"val_loss.npy", np.array(val_loss_list))
-        model.config.to_json_file(
-            output_dir / f"{model.__class__.__name__}_config.json"
-        )
+        train_results.write_results(output_dir=model_dir)
 
     click.echo("Experiment completed.")
 
@@ -127,40 +124,32 @@ def run_experiment(input_yaml):
 def assess_experiment(experiment_dir):
     """Analyze the results of an experiment"""
     from jelly_roll.plotting import plot_loss
+    from jelly_roll.trainer import TrainingResults
 
     experiment_dir = Path(experiment_dir)
 
-    train_loss = np.load(experiment_dir / "train_loss.npy")
-    val_loss = np.load(experiment_dir / "val_loss.npy")
-    plot_loss(train_loss, val_loss)
+    for model_dir in experiment_dir.iterdir():
+        if model_dir.is_dir():
+            click.echo(f"Assessing model in directory: {model_dir}")
+            train_results = TrainingResults.from_results_dir(model_dir)
+            model = train_results.model
 
-    from jelly_roll.models import ModelConstructor
+            analysis_dir = model_dir / "analysis"
+            analysis_dir.mkdir(parents=True, exist_ok=True)
 
-    model_constructor = ModelConstructor(
-        weights_path=experiment_dir / "LinearAutoencoder.pth",
-        model_config_json=experiment_dir / "LinearAutoencoder_config.json",
-    )
-    model = model_constructor.build_model()
+            from jelly_roll.plotting import plot_reconstruction, plot_reconstruction_by_epoch, \
+                plot_reconstruction_with_lines
+            from jelly_roll.data import JellyRoll
+            jr = JellyRoll()
 
-    jr = JellyRoll()
-    data = jr.generate()
-    train, val, test = jr.get_data_loaders()
+            plot_loss(train_results.train_loss, train_results.val_loss, output_dir=analysis_dir)
 
-    # Get a batch from the validation set
-    X_val = next(iter(val))
+            plot_reconstruction(jr, X_val=jr.denormalize(train_results.val_X),
+                                reconstruction=jr.denormalize(train_results.val_X_reconstructed),
+                                output_dir=analysis_dir)
+            plot_reconstruction_by_epoch(jr, X_val=jr.denormalize(train_results.val_X),
+                                         reconstruction=jr.denormalize(train_results.val_X_reconstructed),
+                                         output_dir=analysis_dir)
+            # plot_reconstruction_with_lines(jr, X_val=jr.denormalize(train_results.val_X),reconstruction=jr.denormalize(train_results.val_X_reconstructed))
 
-    # Get reconstructions and denormalize back to original scale
-    with torch.no_grad():
-        model.eval()
-        # Reconstruct on validation set
-        reconstruction = model(X_val)
-        reconstruction_np = reconstruction.detach().cpu().numpy()
-        X_val_np = X_val.detach().cpu().numpy()
 
-    # denormalize
-    reconstruction_denorm = jr.denormalize(reconstruction_np)
-    X_val_denorm = jr.denormalize(X_val_np)
-
-    from jelly_roll.plotting import plot_reconstruction
-
-    plot_reconstruction(jr, X_val_denorm, reconstruction_denorm)

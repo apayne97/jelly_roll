@@ -1,0 +1,8 @@
+unique_id: exp0001
+description: The first experiment is to show how the architecture of an autoencoder alters the latent space representation of the data.
+model_type: LinearAutoencoder
+experiment_config:
+  input_dim: [2]
+  hidden_dim: [4,16,64]
+  latent_dim: [1,2,3]
+epochs: 40
