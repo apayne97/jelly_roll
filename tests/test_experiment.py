@@ -6,8 +6,13 @@ import pytest
 def yaml_file(tmp_path):
     # Create a temporary YAML file for testing
     yaml_content = """
-    name: Test Experiment
+    unique_id: test0001
     description: This is a test experiment.
+    model_type: LinearAutoencoder
+    experiment_config:
+      input_dim: [2]
+      latent_dim: [1]
+      hidden_dim: [4]
     """
     yaml_path = tmp_path / "experiment.yaml"
     yaml_path.write_text(yaml_content)
@@ -19,8 +24,9 @@ def test_experiment_from_yaml(yaml_file):
     experiment = Experiment.from_yaml(str(yaml_file))
 
     # Assert the fields are correctly loaded
-    assert experiment.name == "Test Experiment"
+    assert experiment.unique_id == "test0001"
     assert experiment.description == "This is a test experiment."
+    assert experiment.model_type == "LinearAutoencoder"
 
 
 def test_experiment_yaml_roundtrip(yaml_file, tmp_path):
@@ -55,6 +61,7 @@ def test_config_generation():
         "hidden_dim": [4, 8, 12],
     }
     experiment = Experiment(
+        unique_id="test0002",
         description="Test generating model from config",
         model_type="LinearAutoencoder",
         experiment_config=experiment_config,
